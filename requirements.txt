@@ -2,3 +2,6 @@ streamlit
 groq
 python-dotenv
 requests
+streamlit-oauth
+google-auth-httplib2
+google-auth-oauthlib

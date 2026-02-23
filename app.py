@@ -2,11 +2,105 @@ import streamlit as st
 import os
 from groq import Groq
 from dotenv import load_dotenv
+import json
+from streamlit_oauth import OAuth2Component
 
 # Load environment variables
 load_dotenv()
 
 st.set_page_config(page_title="Personal Finance Chatbot", page_icon="💰", layout="wide")
+
+# Google OAuth Configuration
+GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID", "your_google_client_id.apps.googleusercontent.com")
+GOOGLE_CLIENT_SECRET = os.getenv("GOOGLE_CLIENT_SECRET", "your_google_client_secret")
+SCOPES = ["openid", "email", "profile"]
+
+def oauth_login():
+    """Handle Google OAuth login"""
+    oauth2 = OAuth2Component(
+        client_id=GOOGLE_CLIENT_ID,
+        client_secret=GOOGLE_CLIENT_SECRET,
+        authorize_endpoint="https://accounts.google.com/o/oauth2/auth",
+        token_endpoint="https://oauth2.googleapis.com/token",
+        refresh_token_endpoint="https://oauth2.googleapis.com/token",
+        revoke_endpoint="https://oauth2.googleapis.com/revoke",
+        client_kwargs=dict(scope=SCOPES),
+    )
+    
+    # Session state management
+    if not st.session_state.get("authenticated"):
+        try:
+            token = oauth2.authorize()
+            if token:
+                st.session_state.authenticated = True
+                st.session_state.user_token = token
+                st.rerun()
+        except Exception as e:
+            st.warning("Please set up Google OAuth credentials first. See setup instructions below.")
+    
+    return st.session_state.get("authenticated", False)
+
+# Simple authentication check (fallback)
+def simple_auth_check():
+    """Simple authentication using session state"""
+    if "authenticated" not in st.session_state:
+        st.session_state.authenticated = False
+    
+    if not st.session_state.authenticated:
+        col1, col2, col3 = st.columns([1, 2, 1])
+        with col2:
+            st.markdown("<h2 style='text-align: center;'>Login Required</h2>", unsafe_allow_html=True)
+            
+            # Try OAuth login
+            if GOOGLE_CLIENT_ID != "your_google_client_id.apps.googleusercontent.com":
+                if st.button("🔐 Login with Google", key="google_login_btn"):
+                    try:
+                        oauth2 = OAuth2Component(
+                            client_id=GOOGLE_CLIENT_ID,
+                            client_secret=GOOGLE_CLIENT_SECRET,
+                            authorize_endpoint="https://accounts.google.com/o/oauth2/auth",
+                            token_endpoint="https://oauth2.googleapis.com/token",
+                            refresh_token_endpoint="https://oauth2.googleapis.com/token",
+                            revoke_endpoint="https://oauth2.googleapis.com/revoke",
+                            client_kwargs=dict(scope=SCOPES),
+                        )
+                        token = oauth2.authorize()
+                        if token:
+                            st.session_state.authenticated = True
+                            st.session_state.user_email = token.get("id_token", "User")
+                            st.success("Login successful! Redirecting...")
+                            st.rerun()
+                    except Exception as e:
+                        st.error(f"Login error: {str(e)}")
+            else:
+                st.info("⚙️ **Setup Required:**\n\nTo enable Google Login, add these environment variables:\n\n```\nGOOGLE_CLIENT_ID=your_google_client_id\nGOOGLE_CLIENT_SECRET=your_google_client_secret\n```\n\n**Get credentials:**\n1. Go to https://console.cloud.google.com/\n2. Create new project\n3. Enable Google+ API\n4. Create OAuth 2.0 credentials (Web application)\n5. Set Authorized redirect URI: `http://localhost:8501` (or your deployed URL)\n6. Copy Client ID and Secret")
+            
+            # Demo login option
+            if st.button("👤 Demo Login (No Google Account Needed)", key="demo_login_btn"):
+                st.session_state.authenticated = True
+                st.session_state.user_email = "demo.user@example.com"
+                st.success("Demo login successful! Redirecting...")
+                st.rerun()
+        
+        st.stop()
+    else:
+        # Show logout button in sidebar
+        with st.sidebar:
+            st.divider()
+            user_email = st.session_state.get("user_email", "User")
+            st.write(f"👤 Logged in as: **{user_email}**")
+            if st.button("🚪 Logout"):
+                st.session_state.authenticated = False
+                st.session_state.user_email = None
+                st.success("Logged out successfully!")
+                st.rerun()
+
+# Initialize session state
+if "authenticated" not in st.session_state:
+    st.session_state.authenticated = False
+
+# Check authentication
+simple_auth_check()
 
 # Custom CSS for better styling
 st.markdown("""
@@ -67,6 +161,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 st.markdown('<h1 class="main-header">💰 Personal Finance Chatbot</h1>', unsafe_allow_html=True)
+st.markdown(f'<p style="text-align: center; color: #666;">Welcome, {st.session_state.get("user_email", "User")}!</p>', unsafe_allow_html=True)
 
 st.markdown("""
 <div style="text-align: center; margin-bottom: 2rem;">
