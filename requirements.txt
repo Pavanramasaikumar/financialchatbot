@@ -2,4 +2,3 @@ streamlit
 groq
 python-dotenv
 requests
-streamlit-authenticator

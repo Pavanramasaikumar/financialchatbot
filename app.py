@@ -2,88 +2,11 @@ import streamlit as st
 import os
 from groq import Groq
 from dotenv import load_dotenv
-import streamlit_authenticator as stauth
-import yaml
-from yaml.loader import SafeLoader
 
 # Load environment variables
 load_dotenv()
 
 st.set_page_config(page_title="Personal Finance Chatbot", page_icon="💰", layout="wide")
-
-# Simple Google-style authentication
-def google_style_auth():
-    """Simple authentication with Google-style interface"""
-    if "authenticated" not in st.session_state:
-        st.session_state.authenticated = False
-    
-    if not st.session_state.authenticated:
-        # Login page with Google-style design
-        col1, col2, col3 = st.columns([1, 2, 1])
-        with col2:
-            st.markdown("""
-            <div style="text-align: center; padding: 2rem;">
-                <h1 style="color: #4285F4; margin-bottom: 0.5rem;">💰</h1>
-                <h2 style="color: #202124; margin-bottom: 0.5rem;">Personal Finance Chatbot</h2>
-                <p style="color: #5f6368; margin-bottom: 2rem;">Sign in to continue</p>
-            </div>
-            """, unsafe_allow_html=True)
-            
-            # Login form
-            with st.form("login_form"):
-                email = st.text_input("📧 Email", placeholder="name@gmail.com")
-                password = st.password_input("🔑 Password", placeholder="Enter your password")
-                submit = st.form_submit_button("🔐 Sign in with Google", use_container_width=True)
-                
-                if submit:
-                    # Simple validation - accept any Google email
-                    if email and "@" in email and password:
-                        st.session_state.authenticated = True
-                        st.session_state.user_email = email
-                        st.success("✅ Login successful! Redirecting...")
-                        st.rerun()
-                    else:
-                        st.error("❌ Please enter a valid email and password")
-            
-            st.markdown("<hr style='margin: 2rem 0;'>", unsafe_allow_html=True)
-            
-            # Quick demo access
-            if st.button("👤 Quick Demo Access (No Credentials Needed)", use_container_width=True):
-                st.session_state.authenticated = True
-                st.session_state.user_email = "demo.user@gmail.com"
-                st.success("✅ Demo access granted! Redirecting...")
-                st.rerun()
-            
-            # Info section
-            with st.expander("ℹ️ About this app"):
-                st.markdown("""
-                **Personal Finance Chatbot** helps you with:
-                - 💰 Budgeting advice
-                - 📈 Investment guidance  
-                - 💳 Credit management
-                - 🎓 Student finance tips
-                - 💼 Professional financial planning
-                
-                **Powered by:** Groq AI & Streamlit
-                """)
-        
-        st.stop()
-    else:
-        # Show user info in sidebar
-        with st.sidebar:
-            st.divider()
-            user_email = st.session_state.get("user_email", "User")
-            st.markdown(f"**👤 Signed in as:**")
-            st.info(user_email)
-            
-            if st.button("🚪 Sign out", use_container_width=True):
-                st.session_state.authenticated = False
-                st.session_state.user_email = None
-                st.success("Signed out successfully!")
-                st.rerun()
-
-# Initialize and check authentication
-google_style_auth()
 
 # Custom CSS for better styling
 st.markdown("""
@@ -144,7 +67,6 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 st.markdown('<h1 class="main-header">💰 Personal Finance Chatbot</h1>', unsafe_allow_html=True)
-st.markdown(f'<p style="text-align: center; color: #666;">Welcome, {st.session_state.get("user_email", "User")}!</p>', unsafe_allow_html=True)
 
 st.markdown("""
 <div style="text-align: center; margin-bottom: 2rem;">
